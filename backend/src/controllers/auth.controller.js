@@ -117,32 +117,42 @@ export const logout = (req, res) => {
     res.status(500).json({ message: "Internal server error" });
   }
 };
-export const updateProfile = async(req, res) =>{
-  try{
-    const {profilepic} = req.body;
-    const userId =res.user._id;
-    if(!profilepic){
-        return res.status(400).json({message:"Profile picture is required"});
+export const updateProfile = async (req, res) => {
+  try {
+    const { profilePic } = req.body; // match naming convention
+    const userId = req.user._id; // ✅ should come from req.user
+
+    if (!profilePic) {
+      return res.status(400).json({ message: "Profile picture is required" });
     }
 
-    const uploadResponse =await cloudinary.uploader.upload(profilepic);
-    const updatedUser =await User.findByIdAndUpdate(userId,{profilePic:uploadResponse.secure_url},{new:true});
+    // Upload image to Cloudinary
+    const uploadResponse = await cloudinary.uploader.upload(profilePic);
+
+    // Update user profile
+    const updatedUser = await User.findByIdAndUpdate(
+      userId,
+      { profilePic: uploadResponse.secure_url },
+      { new: true }
+    );
+
     res.status(200).json(updatedUser);
-    }
-    catch(error){
-        console.log(error);
-        res.status(500).json({message:"Internal server error"});
-    }
+  } catch (error) {
+    console.error("Update profile error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
 
-export const checkAuth =async(req,
-  res)=>{
-  try{
-    res.status(200).json(req.user);
-  }
-  catch(error){
-    console.log(error);
-    res.status(500).json({message:"Internal server error"});
 
+export const checkAuth = async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" }); // ⛔ Unauthorized
+    }
+    res.status(200).json({ user: req.user }); // ✅ Send user
+  } catch (error) {
+    console.error("CheckAuth Error:", error);
+    res.status(500).json({ message: "Internal server error" });
   }
-  }
+};
+
