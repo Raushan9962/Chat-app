@@ -1,38 +1,70 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
-import {axiosInstance} from "../lib/axios";
+import axiosInstance from "../lib/axios";
 
-export const useChatStore = create((set) => ({
-    messages: [], // Store the messages here
-   users:[],
-   selectedUser: null,
-   isUserSelected: false,
-   isMessageLoading: false,
+export const useChatStore = create((set, get) => ({
+  messages: [],
+  users: [],
+  selectedUser: null,
+  isUserSelected: false,
+  isUsersLoading: false,
+  isMessageLoading: false,
 
-   getUsers:async () =>{
-    set({isUsersLoading: true});
-    try{
+  // Fetch users
+  getUsers: async () => {
+    set({ isUsersLoading: true });
+    try {
       const res = await axiosInstance.get("/messages/users");
-      set({users: res.data});
-    }catch(error){
-   toast.error(error.response.data.message);
-    }finally{
-      set({isUsersLoading: false});
+      set({ users: res.data });
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to load users");
+    } finally {
+      set({ isUsersLoading: false });
     }
-   },
+  },
 
-   getMessages: async (userId) => {
+  // Fetch messages with selected user
+  getMessages: async (userId) => {
     set({ isMessageLoading: true });
     try {
       const res = await axiosInstance.get(`/messages/${userId}`);
       set({ messages: res.data });
     } catch (error) {
-      toast.error(error.response.data.message);
+      toast.error(error?.response?.data?.message || "Failed to load messages");
     } finally {
       set({ isMessageLoading: false });
     }
   },
 
-  //todo:optimize this one later 
-  setSelectedUser:(selectedUser) => set({ selectedUser }),
+  // Send new message
+  sendMessage: async (messageData) => {
+    const { selectedUser, messages } = get();
+
+    if (!selectedUser?._id) {
+      toast.error("No user selected");
+      return;
+    }
+
+    try {
+      const res = await axiosInstance.post(
+        `/messages/send/${selectedUser._id}`,
+        messageData
+      );
+
+      // Ensure you're pushing the full message object
+      set({ messages: [...messages, res.data] });
+
+      toast.success("Message sent");
+    } catch (error) {
+      toast.error(error?.response?.data?.message || "Failed to send message");
+    }
+  },
+
+  // Select a user for chatting
+  setSelectedUser: (selectedUser) =>
+    set({
+      selectedUser,
+      isUserSelected: !!selectedUser,
+      messages: [], // clear old chat messages when switching
+    }),
 }));
