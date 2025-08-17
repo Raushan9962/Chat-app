@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import toast from "react-hot-toast";
 import axiosInstance from "../lib/axios";
+import  useAuthStore  from "./useAuthStore"; // ✅ Make sure this exists
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -38,7 +39,7 @@ export const useChatStore = create((set, get) => ({
 
   // Send new message
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser } = get();
 
     if (!selectedUser?._id) {
       toast.error("No user selected");
@@ -51,13 +52,41 @@ export const useChatStore = create((set, get) => ({
         messageData
       );
 
-      // Ensure you're pushing the full message object
-      set({ messages: [...messages, res.data] });
+      set((state) => ({
+        messages: [...state.messages, res.data], // ✅ safe update
+      }));
 
       toast.success("Message sent");
     } catch (error) {
       toast.error(error?.response?.data?.message || "Failed to send message");
     }
+  },
+
+  // Listen for new messages via socket.io
+  subscribeToMessages: () => {
+    const { selectedUser } = get();
+    if (!selectedUser?._id) return;
+
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+
+    socket.on("newMessage", (message) => {
+      // Only push if it belongs to the selected user chat
+      if (
+        message.senderId === selectedUser._id ||
+        message.receiverId === selectedUser._id
+      ) {
+        set((state) => ({
+          messages: [...state.messages, message],
+        }));
+      }
+    });
+  },
+
+  unsubscribeFromMessages: () => {
+    const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+    socket.off("newMessage");
   },
 
   // Select a user for chatting
