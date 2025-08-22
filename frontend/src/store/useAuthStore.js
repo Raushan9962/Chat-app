@@ -5,17 +5,18 @@ import axiosInstance from "../lib/axios";
 import toast from "react-hot-toast";
 import { io } from "socket.io-client"; 
 
-// Define your base URL - adjust this to match your backend
-const BASE_URL = process.env.REACT_APP_BASE_URL || 
-  (process.env.NODE_ENV === 'production' 
-    ? 'https://your-backend-url.com' 
-    : 'http://localhost:5000'); // Change this port to match your backend
+// ✅ Define your backend base URL
+const BASE_URL =
+  import.meta.env.VITE_BASE_URL ||
+  (import.meta.env.MODE === "production"
+    ? "https://your-backend-url.com"
+    : "http://localhost:8080");
 
 const useAuthStore = create((set, get) => ({
   authUser: null,
   isSigningUp: false,
   isLoggingIn: false,
-  isUpdatingProfile: false, // Fixed: was 'isUpdating'
+  isUpdatingProfile: false,
   isCheckingAuth: true,
   onlineUsers: [],
   socket: null,
@@ -52,6 +53,8 @@ const useAuthStore = create((set, get) => ({
       const res = await axiosInstance.post("/auth/signup", data);
       toast.success("Account created successfully");
       console.log("✅ signup success:", res.data);
+
+      localStorage.setItem("token", res.data.token); // store token
       set({ authUser: res.data.user });
       get().connectSocket();
     } catch (error) {
@@ -61,18 +64,21 @@ const useAuthStore = create((set, get) => ({
     }
   },
 
-  // ✅ Login user - Fixed multiple issues
+  // ✅ Login user
   login: async (data) => {
     set({ isLoggingIn: true });
     try {
       const res = await axiosInstance.post("/auth/login", data);
-      set({ authUser: res.data.user }); // Fixed: should be res.data.user for consistency
+
+      localStorage.setItem("token", res.data.token); // store token
+      set({ authUser: res.data.user });
+
       toast.success("Login successful");
       get().connectSocket();
     } catch (error) {
       toast.error(error.response?.data?.message || "Login failed");
     } finally {
-      set({ isLoggingIn: false }); // Fixed: was 'isLoggingIng' (typo)
+      set({ isLoggingIn: false });
     }
   },
 
@@ -81,7 +87,7 @@ const useAuthStore = create((set, get) => ({
     try {
       await axiosInstance.post("/auth/logout");
       localStorage.removeItem("token");
-      set({ authUser: null });
+      set({ authUser: null, onlineUsers: [] });
       toast.success("Logout successful");
       get().disconnectSocket();
     } catch (error) {
@@ -94,7 +100,7 @@ const useAuthStore = create((set, get) => ({
     set({ isUpdatingProfile: true });
     try {
       const res = await axiosInstance.put("/auth/update-profile", data);
-      set({ authUser: res.data.user }); // Fixed: should be res.data.user for consistency
+      set({ authUser: res.data.user });
       toast.success("Profile updated successfully");
     } catch (error) {
       toast.error(error.response?.data?.message || "Profile update failed");
@@ -105,44 +111,43 @@ const useAuthStore = create((set, get) => ({
 
   // ✅ Connect socket
   connectSocket: () => {
-    const { authUser } = get();
-    if (!authUser || get().socket?.connected) {
-      return;
-    }
-    
-    console.log('🔌 Connecting socket to:', BASE_URL);
-    
-    const socket = io(BASE_URL, {
+    const { authUser, socket } = get();
+
+    if (!authUser) return;
+    if (socket?.connected) return; // avoid duplicate connections
+
+    console.log("🔌 Connecting socket to:", BASE_URL);
+
+    const newSocket = io(BASE_URL, {
+      withCredentials: true,
       query: {
-        userId: authUser._id, 
+        userId: authUser._id, // 🔑 important for backend mapping
       },
-      transports: ['websocket', 'polling'], // Try websocket first, fallback to polling
-      timeout: 20000,
-      forceNew: true,
     });
-    
-    set({ socket: socket });
-    
-    socket.on('connect', () => {
-      console.log('✅ Socket connected:', socket.id);
-    });
-    
-    socket.on('connect_error', (error) => {
-      console.error('❌ Socket connection error:', error);
-    });
-    
-    socket.on("getOnlineUsers", (userIds) => {
-      console.log('👥 Online users updated:', userIds);
+
+    set({ socket: newSocket });
+
+    // listen for online users update
+    newSocket.on("getOnlineUsers", (userIds) => {
       set({ onlineUsers: userIds });
+    });
+
+    newSocket.on("connect", () => {
+      console.log("✅ Socket connected:", newSocket.id);
+    });
+
+    newSocket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
     });
   },
 
   // ✅ Disconnect socket
   disconnectSocket: () => {
-    if (get().socket?.connected) {
-      get().socket.disconnect();
+    const { socket } = get();
+    if (socket) {
+      socket.disconnect();
+      set({ socket: null, onlineUsers: [] });
     }
-    set({ socket: null }); // Added: clear the socket reference
   },
 }));
 

@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { use, useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import useAuthStore from '../store/useAuthStore';
 import ChatHeader from './ChatHeader';
@@ -17,6 +17,7 @@ const ChatContainer = () => {
   } = useChatStore();
   
   const { authUser } = useAuthStore();
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     if (selectedUser?._id) {
@@ -26,6 +27,12 @@ const ChatContainer = () => {
     
     return () => unsubscribeFromMessages();
   }, [selectedUser?._id, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+  
+  useEffect(() => {
+    if (messagesEndRef.current && messages) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
 
   // Early return if no user is selected
   if (!selectedUser) {
@@ -69,6 +76,7 @@ const ChatContainer = () => {
             <div
               key={message._id}
               className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
+              ref={messagesEndRef}
             >
               {/* Avatar */}
               <div className="chat-image avatar">
