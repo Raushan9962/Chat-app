@@ -6,11 +6,7 @@ import toast from "react-hot-toast";
 import { io } from "socket.io-client"; 
 
 // ✅ Define your backend base URL
-const BASE_URL =
-  import.meta.env.VITE_BASE_URL ||
-  (import.meta.env.MODE === "production"
-    ? "https://your-backend-url.com"
-    : "http://localhost:8080");
+const BASE_URL =import.meta.env.MODE === "development"? "http://localhost:8080":"/api";
 
 const useAuthStore = create((set, get) => ({
   authUser: null,

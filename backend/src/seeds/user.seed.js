@@ -1,8 +1,7 @@
 // src/seeds/user.seed.js
+import { config } from "dotenv";
 import { connectDB } from "../lib/db.js";
 import User from "../models/User.js";
-import mongoose from "mongoose";
-import { config } from "dotenv";
 
 config();
 
@@ -63,6 +62,6 @@ const seedDatabase = async () => {
   } 
 };
 
-// Run the function
+// call the function
 seedDatabase();
 

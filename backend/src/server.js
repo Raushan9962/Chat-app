@@ -14,7 +14,8 @@ import { server, app as socketApp } from "./lib/socket.js";
 
 // Setup __dirname manually (ESM doesn't have it)
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename).resolve();
+
 
 // Load .env from specific directory using path
 dotenv.config({ path: path.join(__dirname, ".env") });
@@ -40,6 +41,13 @@ connectDB();
 // Mount routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+
+if(process.env.NODE_ENV === "production") {
+  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+  app.get("*", (req, res) => {
+    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+  });
+}
 
 // Start the server with socket.io attached
 const PORT = process.env.PORT || 8080;
