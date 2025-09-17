@@ -1,4 +1,4 @@
-import React, { use, useEffect } from 'react';
+import React, { useRef, useEffect } from 'react';
 import { useChatStore } from '../store/useChatStore';
 import useAuthStore from '../store/useAuthStore';
 import ChatHeader from './ChatHeader';
@@ -72,11 +72,11 @@ const ChatContainer = () => {
             </div>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message, index) => (
             <div
-              key={message._id}
+              key={message._id || index}
               className={`chat ${message.senderId === authUser._id ? "chat-end" : "chat-start"}`}
-              ref={messagesEndRef}
+              ref={index === messages.length - 1 ? messagesEndRef : null} // ✅ only attach ref to last message
             >
               {/* Avatar */}
               <div className="chat-image avatar">

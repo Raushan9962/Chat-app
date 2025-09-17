@@ -10,15 +10,14 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 // Import socket setup
-import { server, app as socketApp } from "./lib/socket.js"; 
+import { server, app as socketApp } from "./lib/socket.js";
 
-// Setup __dirname manually (ESM doesn't have it)
+// ✅ Setup __dirname manually (ESM doesn't have it)
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename).resolve();
+const __dirname = path.dirname(__filename);
 
-
-// Load .env from specific directory using path
-dotenv.config({ path: path.join(__dirname, ".env") });
+// Load .env (Render will inject env vars automatically)
+dotenv.config();
 
 // ✅ use the same `app` instance from socket.js
 const app = socketApp;
@@ -30,7 +29,11 @@ app.use(express.urlencoded({ limit: "10mb", extended: true }));
 app.use(cookieParser());
 app.use(
   cors({
-    origin: ["http://localhost:5173", "http://localhost:5174"], // allow both
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.CLIENT_URL, // ✅ works on Render
+    ],
     credentials: true,
   })
 );
@@ -42,14 +45,17 @@ connectDB();
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
 
-if(process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../frontend/dist")));
+// ✅ Serve frontend in production
+if (process.env.NODE_ENV === "production") {
+  const frontendPath = path.join(__dirname, "../frontend/dist");
+  app.use(express.static(frontendPath));
+
   app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../frontend", "dist", "index.html"));
+    res.sendFile(path.join(frontendPath, "index.html"));
   });
 }
 
-// Start the server with socket.io attached
+// ✅ Start the server with socket.io attached
 const PORT = process.env.PORT || 8080;
 server.listen(PORT, () => {
   console.log(`✅ Server is running on port: ${PORT}`);
