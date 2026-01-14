@@ -1,9 +1,28 @@
-// src/lib/axios.js
 import axios from "axios";
 
 const axiosInstance = axios.create({
-  baseURL: import.meta.env.MODE === "development" ? "http://localhost:8080/api": "/api",
-  withCredentials: true, // if your backend uses cookies
+  baseURL: import.meta.env.VITE_SERVER_URL || "http://localhost:5000/api",
+  withCredentials: true,
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-export default axiosInstance; // ✅ default export
+// Request interceptor
+axiosInstance.interceptors.request.use(
+  (config) => config,
+  (error) => Promise.reject(error)
+);
+
+// Response interceptor
+axiosInstance.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      window.location.href = "/login";
+    }
+    return Promise.reject(error);
+  }
+);
+
+export default axiosInstance;

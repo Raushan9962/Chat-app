@@ -11,6 +11,12 @@ const PREVIEW_MESSAGES = [
 const SettingsPage = () => {
   const { theme, setTheme } = useThemeStore();
 
+  const handleThemeChange = (themeName) => {
+    setTheme(themeName);
+    // Force re-render by updating a state if needed
+    // The theme change will be instant due to document.documentElement update
+  };
+
   return (
     <div className="h-screen container mx-auto px-4 pt-20 max-w-5xl">
       <div className="space-y-6">
@@ -26,7 +32,7 @@ const SettingsPage = () => {
           {THEMES.map((themeName) => (
             <button
               key={themeName}
-              onClick={() => setTheme(themeName)}
+              onClick={() => handleThemeChange(themeName)}
               className={`p-3 rounded-lg border-2 transition-all duration-200 hover:scale-105 cursor-pointer ${
                 theme === themeName 
                   ? "border-primary bg-primary/20 text-primary font-bold shadow-lg transform scale-105" 
@@ -120,24 +126,24 @@ const SettingsPage = () => {
         </div>
 
         {/* Theme Colors Info */}
-        <div className="bg-base-100 p-6 rounded-xl shadow-lg">
+        <div className="bg-base-100 p-6 rounded-xl shadow-lg border border-base-300">
           <h3 className="text-lg font-semibold mb-3 text-base-content">Current Theme Colors</h3>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-primary rounded-full shadow-sm"></div>
-              <span className="text-sm text-base-content">Primary</span>
+              <div className="w-8 h-8 bg-primary rounded-full shadow-sm border-2 border-base-300"></div>
+              <span className="text-sm text-base-content font-medium">Primary</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-secondary rounded-full shadow-sm"></div>
-              <span className="text-sm text-base-content">Secondary</span>
+              <div className="w-8 h-8 bg-secondary rounded-full shadow-sm border-2 border-base-300"></div>
+              <span className="text-sm text-base-content font-medium">Secondary</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-accent rounded-full shadow-sm"></div>
-              <span className="text-sm text-base-content">Accent</span>
+              <div className="w-8 h-8 bg-accent rounded-full shadow-sm border-2 border-base-300"></div>
+              <span className="text-sm text-base-content font-medium">Accent</span>
             </div>
             <div className="flex items-center gap-3">
-              <div className="w-6 h-6 bg-neutral rounded-full shadow-sm"></div>
-              <span className="text-sm text-base-content">Neutral</span>
+              <div className="w-8 h-8 bg-neutral rounded-full shadow-sm border-2 border-base-300"></div>
+              <span className="text-sm text-base-content font-medium">Neutral</span>
             </div>
           </div>
         </div>

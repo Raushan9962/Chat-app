@@ -14,12 +14,21 @@ import { Loader } from "lucide-react";
 import { Toaster } from "react-hot-toast";
 
 const App = () => {
-  const { authUser, checkAuth, isCheckingAuth,onlineUsers } = useAuthStore();
-  const { theme } = useThemeStore(); // This ensures theme store initializes
+  const { authUser, checkAuth, isCheckingAuth, onlineUsers } = useAuthStore();
+  const { theme } = useThemeStore(); // This ensures theme store initializes and subscribes to changes
+  
   console.log(onlineUsers);
+  
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
+
+  // Ensure theme is applied on every render
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.setAttribute("data-theme", theme);
+    }
+  }, [theme]);
 
   if (isCheckingAuth && !authUser) {
     return (

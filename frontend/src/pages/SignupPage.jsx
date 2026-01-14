@@ -1,5 +1,6 @@
+// src/pages/SignupPage.jsx
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Eye, EyeOff, Loader2, Lock, User, Mail, MessageSquare } from 'lucide-react';
 
 import useAuthStore from '../store/useAuthStore.js';
@@ -14,22 +15,44 @@ const SignupPage = () => {
   });
 
   const [showPassword, setShowPassword] = useState(false);
-
   const { signup, isSigningUp } = useAuthStore();
+  const navigate = useNavigate();
 
   const validateForm = () => {
-    if (!formData.fullName) return toast.error("Full name is required");
-    if (!formData.email) return toast.error("Email is required");
-    if (!/\S+@\S+\.\S+/.test(formData.email)) return toast.error("Invalid email format");
-    if (!formData.password) return toast.error("Password is required");
+    if (!formData.fullName) {
+      toast.error("Full name is required");
+      return false;
+    }
+    if (!formData.email) {
+      toast.error("Email is required");
+      return false;
+    }
+    if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      toast.error("Invalid email format");
+      return false;
+    }
+    if (!formData.password) {
+      toast.error("Password is required");
+      return false;
+    }
+    if (formData.password.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return false;
+    }
     return true;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const success = validateForm();
-    if (success === true) {
-      signup(formData);
+    if (!validateForm()) return;
+
+    try {
+      const result = await signup(formData);
+      if (result.success) {
+        navigate('/login'); // Navigate to login page after successful signup
+      }
+    } catch (error) {
+      console.error("Signup error:", error);
     }
   };
 

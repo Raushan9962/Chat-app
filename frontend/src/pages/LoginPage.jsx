@@ -1,8 +1,9 @@
+// src/pages/LoginPage.jsx
 import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import useAuthStore from "../store/useAuthStore";
 import { Eye, EyeOff, Loader2, Lock, Mail, MessageSquare } from 'lucide-react';
 import AuthImagePattern from "../components/AuthImagePattern";
-import { Link } from 'react-router-dom';
 import toast from 'react-hot-toast';
 
 const LoginPage = () => {
@@ -13,6 +14,7 @@ const LoginPage = () => {
   });
 
   const { login, isLoggingIn } = useAuthStore();
+  const navigate = useNavigate();
 
   const validateForm = () => {
     if (!formData.email.trim()) {
@@ -40,8 +42,10 @@ const LoginPage = () => {
     if (!validateForm()) return;
 
     try {
-      await login(formData);
-      // Don't show success toast here - let the store handle it
+      const result = await login(formData);
+      if (result.success) {
+        navigate('/'); // Navigate to home page after successful login
+      }
     } catch (error) {
       // Error toast is handled by the store
       console.error("Login error:", error);

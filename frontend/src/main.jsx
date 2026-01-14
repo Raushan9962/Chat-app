@@ -7,7 +7,9 @@ import { Sun, Moon, Palette, Zap, Heart, Leaf, Crown, Waves } from "lucide-react
 
 import App from './App.jsx';
 import './index.css'; // ✅ Use index.css if using Tailwind or global styles
- window.Buffer = Buffer;
+
+window.global = window;
+window.Buffer = Buffer;
 createRoot(document.getElementById('root')).render(
   <React.StrictMode>
     <BrowserRouter>

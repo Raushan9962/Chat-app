@@ -1,6 +1,40 @@
 // src/store/useThemeStore.js
 import { create } from "zustand";
-import { THEMES } from "../constants/themes.js";
+
+export const THEMES = [
+  "light",
+  "dark",
+  "cupcake",
+  "bumblebee",
+  "emerald",
+  "corporate",
+  "synthwave",
+  "retro",
+  "cyberpunk",
+  "valentine",
+  "halloween",
+  "garden",
+  "forest",
+  "aqua",
+  "lofi",
+  "pastel",
+  "fantasy",
+  "wireframe",
+  "black",
+  "luxury",
+  "dracula",
+  "cmyk",
+  "autumn",
+  "business",
+  "acid",
+  "lemonade",
+  "night",
+  "coffee",
+  "winter",
+  "dim",
+  "nord",
+  "sunset",
+];
 
 const getSavedTheme = () => {
   if (typeof window === "undefined") return THEMES[0];
@@ -13,23 +47,25 @@ const getSavedTheme = () => {
   }
 };
 
+const applyTheme = (themeName) => {
+  if (typeof document !== "undefined") {
+    document.documentElement.setAttribute("data-theme", themeName);
+  }
+};
+
 export const useThemeStore = create((set, get) => {
   const initialTheme = getSavedTheme();
   
   // Apply initial theme immediately
-  if (typeof document !== "undefined") {
-    document.documentElement.setAttribute("data-theme", initialTheme);
-  }
+  applyTheme(initialTheme);
 
   return {
     theme: initialTheme,
     setTheme: (themeName) => {
       if (!THEMES.includes(themeName)) return;
       
-      // Apply theme to document immediately - DaisyUI handles colors automatically
-      if (typeof document !== "undefined") {
-        document.documentElement.setAttribute("data-theme", themeName);
-      }
+      // Apply theme to document immediately
+      applyTheme(themeName);
       
       // Save to localStorage
       try {

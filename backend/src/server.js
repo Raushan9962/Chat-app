@@ -1,62 +1,56 @@
-// --- src/server.js ---
-import express from "express";
-import dotenv from "dotenv";
+import http from "http";
+import { Server } from "socket.io";
+import app from "./app.js";
 import { connectDB } from "./lib/db.js";
-import authRoutes from "./routes/auth.route.js";
-import cookieParser from "cookie-parser";
-import messageRoutes from "./routes/message.route.js";
-import cors from "cors";
+import { setupSocket } from "./lib/socket.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
-// Import socket setup
-import { server, app as socketApp } from "./lib/socket.js";
-
-// ✅ Setup __dirname manually (ESM doesn't have it)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load .env (Render will inject env vars automatically)
-dotenv.config();
+// Create HTTP server
+const server = http.createServer(app);
 
-// ✅ use the same `app` instance from socket.js
-const app = socketApp;
-
-// Increase payload limit for JSON & URL encoded data
-app.use(express.json({ limit: "10mb" }));
-app.use(express.urlencoded({ limit: "10mb", extended: true }));
-
-app.use(cookieParser());
-app.use(
-  cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      process.env.CLIENT_URL, // ✅ works on Render
-    ],
+// Initialize Socket.IO with CORS
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "http://localhost:3000",
     credentials: true,
-  })
-);
+  },
+  transports: ["websocket", "polling"],
+});
 
 // Connect to database
 connectDB();
 
-// Mount routes
+// Setup Socket.IO
+setupSocket(io);
+
+// Import routes
+import authRoutes from "./routes/auth.route.js";
+import messageRoutes from "./routes/message.route.js";
+import videoRoutes from "./routes/video.route.js";
+import meetingRoutes from "./routes/meeting.route.js";
+
+// Use routes
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/video", videoRoutes);
+app.use("/api/meetings", meetingRoutes);
 
-// ✅ Serve frontend in production
+// Serve frontend in production
 if (process.env.NODE_ENV === "production") {
-  const frontendPath = path.join(__dirname, "../frontend/dist");
-  app.use(express.static(frontendPath));
-
+  app.use(express.static(path.join(__dirname, "../frontend/build")));
+  
   app.get("*", (req, res) => {
-    res.sendFile(path.join(frontendPath, "index.html"));
+    res.sendFile(path.join(__dirname, "../frontend/build/index.html"));
   });
 }
 
-// ✅ Start the server with socket.io attached
-const PORT = process.env.PORT || 8080;
+const PORT = process.env.PORT || 5000;
+
 server.listen(PORT, () => {
-  console.log(`✅ Server is running on port: ${PORT}`);
+  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`📡 Socket.IO ready for connections`);
 });
